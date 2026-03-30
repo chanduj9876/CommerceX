@@ -4,8 +4,8 @@ import com.commercex.shipping.client.OrderServiceClient;
 import com.commercex.shipping.client.UserServiceClient;
 import com.commercex.shipping.dto.CreateShipmentRequest;
 import com.commercex.shipping.dto.ShipmentResponseDTO;
-import com.commercex.shipping.dto.client.OrderDTO;
-import com.commercex.shipping.dto.client.UserDTO;
+import com.commercex.shipping.client.dto.OrderDTO;
+import com.commercex.shipping.client.dto.UserDTO;
 import com.commercex.shipping.entity.ShipmentStatus;
 import com.commercex.shipping.repository.ShipmentRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -78,10 +78,10 @@ class ShipmentCreationIntegrationTest {
     @Autowired
     ShipmentRepository shipmentRepository;
 
-    @MockBean
+    @MockitoBean
     OrderServiceClient orderServiceClient;
 
-    @MockBean
+    @MockitoBean
     UserServiceClient userServiceClient;
 
     private static final Long TEST_ORDER_ID = 42L;

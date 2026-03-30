@@ -7,8 +7,8 @@ import com.commercex.order.client.ProductServiceClient;
 import com.commercex.order.client.UserServiceClient;
 import com.commercex.order.dto.CreateOrderRequest;
 import com.commercex.order.dto.OrderResponseDTO;
-import com.commercex.order.dto.client.ProductDTO;
-import com.commercex.order.dto.client.UserDTO;
+import com.commercex.order.client.ProductDTO;
+import com.commercex.order.client.UserDTO;
 import com.commercex.order.entity.OrderStatus;
 import com.commercex.order.repository.OrderRepository;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -90,10 +90,10 @@ class OrderPlacementIntegrationTest {
     OrderRepository orderRepository;
 
     // Mock external Feign calls — these services run separately
-    @MockBean
+    @MockitoBean
     ProductServiceClient productServiceClient;
 
-    @MockBean
+    @MockitoBean
     UserServiceClient userServiceClient;
 
     private static final Long TEST_USER_ID = 1L;
