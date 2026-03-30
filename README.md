@@ -118,8 +118,9 @@ The fastest way to run the full stack:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/commercex.git
+git clone https://github.com/chanduj9876/CommerceX.git
 cd commercex
+git checkout microservice
 
 # 2. Build all service images and start infrastructure + services
 docker compose up -d --build
