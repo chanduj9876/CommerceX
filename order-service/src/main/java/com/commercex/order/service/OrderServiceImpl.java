@@ -30,6 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -71,26 +73,43 @@ public class OrderServiceImpl implements OrderService {
 
         // 4. Convert cart items → order items (with stock deduction via product-service)
         BigDecimal subtotal = BigDecimal.ZERO;
+        List<CartItem> deductedItems = new ArrayList<>();
 
-        for (CartItem cartItem : cart.getItems()) {
-            Long productId = cartItem.getProductId();
+        try {
+            for (CartItem cartItem : cart.getItems()) {
+                Long productId = cartItem.getProductId();
 
-            // Fetch product from product-service
-            ProductDTO product = productServiceClient.getProduct(productId);
+                // Fetch product from product-service
+                ProductDTO product = productServiceClient.getProduct(productId);
 
-            // Deduct stock via product-service (throws InsufficientStockException if not enough)
-            productServiceClient.deductStock(productId, cartItem.getQuantity());
+                // Deduct stock via product-service (throws InsufficientStockException if not enough)
+                productServiceClient.deductStock(productId, cartItem.getQuantity());
+                deductedItems.add(cartItem);
 
-            // Snapshot product data into order item
-            OrderItem orderItem = OrderItem.builder()
-                    .productId(product.getId())
-                    .productName(product.getName())
-                    .unitPrice(product.getPrice())
-                    .quantity(cartItem.getQuantity())
-                    .build();
+                // Snapshot product data into order item
+                OrderItem orderItem = OrderItem.builder()
+                        .productId(product.getId())
+                        .productName(product.getName())
+                        .unitPrice(product.getPrice())
+                        .quantity(cartItem.getQuantity())
+                        .build();
 
-            order.addItem(orderItem);
-            subtotal = subtotal.add(orderItem.getSubtotal());
+                order.addItem(orderItem);
+                subtotal = subtotal.add(orderItem.getSubtotal());
+            }
+        } catch (Exception e) {
+            // Compensate: restore stock for every item already deducted before the failure
+            for (CartItem deducted : deductedItems) {
+                try {
+                    productServiceClient.restoreStock(deducted.getProductId(), deducted.getQuantity());
+                    log.info("[ORDER] Compensated stock for product {} after order creation failure",
+                            deducted.getProductId());
+                } catch (Exception restoreEx) {
+                    log.error("[ORDER] Failed to compensate stock for product {} — {} units lost. Error: {}",
+                            deducted.getProductId(), deducted.getQuantity(), restoreEx.getMessage());
+                }
+            }
+            throw e;
         }
 
         // 5. Apply discount

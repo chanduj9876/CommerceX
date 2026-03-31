@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Global JWT authentication filter for the API Gateway.
@@ -32,15 +33,20 @@ public class JwtAuthGatewayFilter implements GlobalFilter, Ordered {
     @Value("${jwt.secret}")
     private String secret;
 
-    private static final List<String> PUBLIC_PATHS = List.of(
-            "/api/v1/auth/"
+    // Always-public regardless of HTTP method
+    private static final List<String> PUBLIC_PATHS = List.of("/api/v1/auth/");
+
+    // Public only for specific HTTP methods (method → path prefixes)
+    private static final Map<String, List<String>> PUBLIC_METHOD_PATHS = Map.of(
+            "GET", List.of("/api/v1/products", "/api/v1/categories")
     );
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
+        String method = exchange.getRequest().getMethod().name();
 
-        if (isPublicPath(path)) {
+        if (isPublicPath(path, method)) {
             return chain.filter(exchange);
         }
 
@@ -62,8 +68,10 @@ public class JwtAuthGatewayFilter implements GlobalFilter, Ordered {
         }
     }
 
-    private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+    private boolean isPublicPath(String path, String method) {
+        if (PUBLIC_PATHS.stream().anyMatch(path::startsWith)) return true;
+        return PUBLIC_METHOD_PATHS.getOrDefault(method, List.of())
+                .stream().anyMatch(path::startsWith);
     }
 
     private void validateToken(String token) {

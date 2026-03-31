@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,8 +44,9 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPaymentsByOrderId(orderId, userId));
     }
 
-    @Operation(summary = "Confirm a payment by transaction ID")
+    @Operation(summary = "Confirm a payment by transaction ID (admin)")
     @PostMapping("/confirm/{transactionId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PaymentResponseDTO> confirmPayment(
             @PathVariable String transactionId) {
         return ResponseEntity.ok(paymentService.confirmPayment(transactionId));
@@ -53,8 +55,12 @@ public class PaymentController {
     @Operation(summary = "Get payment by transaction ID")
     @GetMapping("/{transactionId}")
     public ResponseEntity<PaymentResponseDTO> getPaymentByTransactionId(
+            Authentication authentication,
             @PathVariable String transactionId) {
-        return ResponseEntity.ok(paymentService.getPaymentByTransactionId(transactionId));
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        Long userId = isAdmin ? null : resolveUserId(authentication);
+        return ResponseEntity.ok(paymentService.getPaymentByTransactionId(transactionId, userId));
     }
 
     private Long resolveUserId(Authentication authentication) {

@@ -1,14 +1,14 @@
 package com.commercex.order.controller;
 
 import com.commercex.common.ResourceNotFoundException;
+import com.commercex.order.dto.OrderResponseDTO;
 import com.commercex.order.entity.Order;
+import com.commercex.order.entity.OrderStatus;
 import com.commercex.order.repository.OrderRepository;
+import com.commercex.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -18,6 +18,7 @@ import java.util.Map;
 public class InternalOrderController {
 
     private final OrderRepository orderRepository;
+    private final OrderService orderService;
 
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> getOrder(@PathVariable Long id) {
@@ -31,5 +32,12 @@ public class InternalOrderController {
                 "totalAmount", order.getTotalAmount(),
                 "status", order.getStatus().name()
         ));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<OrderResponseDTO> updateOrderStatus(
+            @PathVariable Long id,
+            @RequestParam OrderStatus status) {
+        return ResponseEntity.ok(orderService.updateOrderStatus(id, status));
     }
 }

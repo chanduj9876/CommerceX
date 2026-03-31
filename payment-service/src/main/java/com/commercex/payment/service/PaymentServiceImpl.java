@@ -108,10 +108,19 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(readOnly = true)
-    public PaymentResponseDTO getPaymentByTransactionId(String transactionId) {
+    public PaymentResponseDTO getPaymentByTransactionId(String transactionId, Long userId) {
         Payment payment = paymentRepository.findByTransactionId(transactionId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Payment not found with transaction ID: " + transactionId));
+
+        if (userId != null) {
+            OrderDTO order = orderServiceClient.getOrder(payment.getOrderId());
+            if (!order.getUserId().equals(userId)) {
+                throw new ResourceNotFoundException(
+                        "Payment not found with transaction ID: " + transactionId);
+            }
+        }
+
         return PaymentMapper.toResponseDTO(payment);
     }
 
