@@ -10,7 +10,48 @@ The Shipment module provides shipment tracking for confirmed orders. Shipments a
 
 ## Endpoints
 
-### 1. Create Shipment
+### 1. List All Shipments
+**GET** `/api/v1/shipments` 🔒 ADMIN only
+
+Returns a paginated list of all shipments.
+
+```bash
+curl "http://localhost:8080/api/v1/shipments?page=0&size=20&sort=createdAt,desc" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Query Parameters:**
+
+| Parameter | Type    | Default    | Description                              |
+|-----------|---------|------------|------------------------------------------|
+| page      | Integer | 0          | Page number (0-based)                    |
+| size      | Integer | 20         | Number of results per page               |
+| sort      | String  | createdAt  | Field to sort by, optionally with `,asc` or `,desc` |
+
+**Success Response (200 OK):**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "orderId": 1,
+      "trackingId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "status": "IN_TRANSIT",
+      "estimatedDelivery": "2026-04-04",
+      "createdAt": "2026-03-28T14:00:00",
+      "updatedAt": "2026-03-29T10:00:00"
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 20,
+  "number": 0
+}
+```
+
+---
+
+### 2. Create Shipment
 **POST** `/api/v1/shipments` 🔒 ADMIN only
 
 Manually creates a shipment for a confirmed order. Normally shipments are auto-created when an order is confirmed, but this provides a manual override.
@@ -48,7 +89,7 @@ Manually creates a shipment for a confirmed order. Normally shipments are auto-c
 
 ---
 
-### 2. Track Shipment
+### 3. Track Shipment
 **GET** `/api/v1/shipments/{trackingId}`
 
 Returns the current status and details of a shipment by its UUID tracking ID.
@@ -78,7 +119,7 @@ curl http://localhost:8080/api/v1/shipments/a1b2c3d4-e5f6-7890-abcd-ef1234567890
 
 ---
 
-### 3. Update Shipment Status
+### 4. Update Shipment Status
 **PATCH** `/api/v1/shipments/{trackingId}/status` 🔒 ADMIN only
 
 Updates the shipment status. Transitions are validated — see the status lifecycle below.
@@ -115,7 +156,7 @@ Updates the shipment status. Transitions are validated — see the status lifecy
 
 ---
 
-### 4. Get Shipment by Order
+### 5. Get Shipment by Order
 **GET** `/api/v1/shipments/order/{orderId}`
 
 Returns the shipment associated with a specific order.
