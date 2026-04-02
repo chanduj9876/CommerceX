@@ -31,6 +31,9 @@
 		<spring-cloud.version>2024.0.1</spring-cloud.version>
 		<testcontainers.version>1.20.4</testcontainers.version>
 		<jjwt.version>0.12.6</jjwt.version>
+		<micrometer-tracing.version>1.4.2</micrometer-tracing.version>
+		<zipkin.version>3.4.2</zipkin.version>
+		<logstash-encoder.version>8.0</logstash-encoder.version>
 	</properties>
 
 	<dependencyManagement>
@@ -72,6 +75,25 @@
 				<groupId>io.jsonwebtoken</groupId>
 				<artifactId>jjwt-jackson</artifactId>
 				<version>${jjwt.version}</version>
+			</dependency>
+			<!-- Distributed Tracing -->
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-tracing-bom</artifactId>
+				<version>${micrometer-tracing.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>io.zipkin.reporter2</groupId>
+				<artifactId>zipkin-reporter-brave</artifactId>
+				<version>${zipkin.version}</version>
+			</dependency>
+			<!-- Centralized Logging -->
+			<dependency>
+				<groupId>net.logstash.logback</groupId>
+				<artifactId>logstash-logback-encoder</artifactId>
+				<version>${logstash-encoder.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

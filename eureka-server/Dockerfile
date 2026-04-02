@@ -13,9 +13,6 @@ COPY payment-service/pom.xml payment-service/pom.xml
 COPY shipping-service/pom.xml shipping-service/pom.xml
 COPY eureka-server/pom.xml eureka-server/pom.xml
 
-# Download dependencies (cached layer)
-RUN mvn dependency:go-offline -pl eureka-server -B
-
 # Copy source and build
 COPY eureka-server/src eureka-server/src
 RUN mvn package -pl eureka-server -DskipTests -B

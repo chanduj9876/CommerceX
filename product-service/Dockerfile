@@ -13,9 +13,6 @@ COPY order-service/pom.xml order-service/pom.xml
 COPY payment-service/pom.xml payment-service/pom.xml
 COPY shipping-service/pom.xml shipping-service/pom.xml
 
-# Download dependencies (cached layer)
-RUN mvn dependency:go-offline -pl common-lib,product-service -am -B
-
 # Copy source and build
 COPY common-lib/src common-lib/src
 COPY product-service/src product-service/src

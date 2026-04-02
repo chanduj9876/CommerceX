@@ -55,7 +55,7 @@ services:
       - commercex-network
 
   # ────────────────────────────────────────────────────────────
-  # Service Registry
+  # Service Registry (Single Instance for RAM Optimization)
   # ────────────────────────────────────────────────────────────
 
   eureka-server:
@@ -63,15 +63,18 @@ services:
       context: .
       dockerfile: eureka-server/Dockerfile
     image: commercex/eureka-server
-    container_name: commercex-eureka
+    container_name: commercex-eureka-server
+    hostname: eureka-server
     ports:
       - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: standalone
     healthcheck:
       test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:8761/actuator/health 2>&1 || exit 1"]
       interval: 20s
       timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 40s
     networks:
       - commercex-network
 
@@ -94,6 +97,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       JWT_SECRET: Y29tbWVyY2V4LXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9uLTEyMzQ1Njc4OQ==
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
     depends_on:
       postgres:
         condition: service_healthy
@@ -182,6 +186,7 @@ services:
       SPRING_RABBITMQ_PASSWORD: guest
       JWT_SECRET: Y29tbWVyY2V4LXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9uLTEyMzQ1Njc4OQ==
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
     depends_on:
       postgres:
         condition: service_healthy
@@ -242,6 +247,9 @@ services:
     environment:
       JWT_SECRET: Y29tbWVyY2V4LXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1nZW5lcmF0aW9uLTEyMzQ1Njc4OQ==
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
     depends_on:
       eureka-server:
         condition: service_started
@@ -259,12 +267,106 @@ services:
     networks:
       - commercex-network
 
+  # ────────────────────────────────────────────────────────────
+  # Observability Stack
+  # ────────────────────────────────────────────────────────────
+
+  # Distributed Tracing — Zipkin
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: commercex-zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - commercex-network
+
+  # Metrics — Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: commercex-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - commercex-network
+
+  # ────────────────────────────────────────────────────────────
+  # DISABLED: Heavy observability tools (saves ~1.6GB RAM)
+  # Uncomment below to re-enable Grafana + ELK stack
+  # ────────────────────────────────────────────────────────────
+
+  # # Metrics Visualization — Grafana
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: commercex-grafana
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     GF_SECURITY_ADMIN_USER: admin
+  #     GF_SECURITY_ADMIN_PASSWORD: admin
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #   networks:
+  #     - commercex-network
+
+  # # Centralized Logging — Elasticsearch
+  # elasticsearch:
+  #   image: elasticsearch:8.11.0
+  #   container_name: commercex-elasticsearch
+  #   environment:
+  #     - discovery.type=single-node
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #     - xpack.security.enabled=false
+  #   ports:
+  #     - "9200:9200"
+  #     - "9300:9300"
+  #   volumes:
+  #     - elasticsearch_data:/usr/share/elasticsearch/data
+  #   networks:
+  #     - commercex-network
+
+  # # Log Aggregation — Logstash
+  # logstash:
+  #   image: logstash:8.11.0
+  #   container_name: commercex-logstash
+  #   ports:
+  #     - "5000:5000"
+  #     - "5044:5044"
+  #   volumes:
+  #     - ./docker/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+  #   environment:
+  #     LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+  #   depends_on:
+  #     - elasticsearch
+  #   networks:
+  #     - commercex-network
+
+  # # Log Visualization — Kibana
+  # kibana:
+  #   image: kibana:8.11.0
+  #   container_name: commercex-kibana
+  #   ports:
+  #     - "5601:5601"
+  #   environment:
+  #     ELASTICSEARCH_URL: http://elasticsearch:9200
+  #     ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+  #   depends_on:
+  #     - elasticsearch
+  #   networks:
+  #     - commercex-network
+
 # ────────────────────────────────────────────────────────────
 # Named Volumes & Network
 # ────────────────────────────────────────────────────────────
 
 volumes:
   postgres_data:
+  # grafana_data:         # Disabled - Grafana commented out
+  # elasticsearch_data:   # Disabled - ELK stack commented out
 
 networks:
   commercex-network:

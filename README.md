@@ -67,7 +67,7 @@ graph TD
 | Layer | Technology |
 |---|---|
 | Language | Java 21 |
-| Framework | Spring Boot 4.0.4 |
+| Framework | Spring Boot 3.4.4 |
 | Service Discovery | Spring Cloud Netflix Eureka |
 | API Gateway | Spring Cloud Gateway (WebFlux) |
 | Inter-Service HTTP | Spring Cloud OpenFeign |

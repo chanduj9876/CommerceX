@@ -1,13 +1,107 @@
-server:
-  port: 8761
-
 spring:
   application:
     name: eureka-server
 
+# Default configuration (used when no profile is active)
+server:
+  port: ${SERVER_PORT:8761}
+
 eureka:
+  instance:
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:localhost}
+    prefer-ip-address: false
+  client:
+    register-with-eureka: ${REGISTER_WITH_EUREKA:true}
+    fetch-registry: ${FETCH_REGISTRY:true}
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+  server:
+    enable-self-preservation: true  # Enable in HA mode for production
+    eviction-interval-timer-in-ms: 15000
+
+# Management endpoints for health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+---
+# Profile: peer1 (Primary Eureka Server - Port 8761)
+spring:
+  config:
+    activate:
+      on-profile: peer1
+
+server:
+  port: 8761
+
+eureka:
+  instance:
+    hostname: eureka-server-1
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server-2:8762/eureka/,http://eureka-server-3:8763/eureka/
+
+---
+# Profile: peer2 (Secondary Eureka Server - Port 8762)
+spring:
+  config:
+    activate:
+      on-profile: peer2
+
+server:
+  port: 8762
+
+eureka:
+  instance:
+    hostname: eureka-server-2
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server-1:8761/eureka/,http://eureka-server-3:8763/eureka/
+
+---
+# Profile: peer3 (Tertiary Eureka Server - Port 8763)
+spring:
+  config:
+    activate:
+      on-profile: peer3
+
+server:
+  port: 8763
+
+eureka:
+  instance:
+    hostname: eureka-server-3
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server-1:8761/eureka/,http://eureka-server-2:8762/eureka/
+
+---
+# Profile: standalone (Single instance for local dev)
+spring:
+  config:
+    activate:
+      on-profile: standalone
+
+server:
+  port: 8761
+
+eureka:
+  instance:
+    hostname: localhost
   client:
     register-with-eureka: false
     fetch-registry: false
   server:
     enable-self-preservation: false
+
